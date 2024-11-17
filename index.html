@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מעקב הוצאות חודשיות</title>
+    
+    <!-- ספריות חיצוניות -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    
+    <link rel="stylesheet" href="styles.css">
+    <script src="env.js"></script>
+    <script src="script.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="theme-toggle">
+            <button onclick="toggleTheme()">החלף מצב תצוגה (בהיר/חשוך)</button>
+        </div>
+
+        <div id="loginForm" class="login-form">
+            <h2>התחברות למערכת</h2>
+            <div class="form-group">
+                <label for="nameInput">שם מלא:</label>
+                <input type="text" id="nameInput" required>
+            </div>
+            <div class="form-group">
+                <label for="phoneInput">מספר טלפון:</label>
+                <input type="tel" id="phoneInput" required>
+            </div>
+            <button onclick="login()">התחבר</button>
+            <div id="loginError" class="error hidden"></div>
+        </div>
+
+        <div id="mainContent" class="hidden">
+            <h1>מעקב הוצאות חודשיות</h1>
+
+            <div class="backup-section">
+                <h3>גיבוי נתונים</h3>
+                <button onclick="backupData()">צור גיבוי</button>
+                <div class="restore-section">
+                    <input type="file" id="restoreFile" accept=".json" onchange="handleRestore(this.files[0])" style="display: none;">
+                    <button onclick="document.getElementById('restoreFile').click()">שחזר מגיבוי</button>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h2>הגדרות</h2>
+                
+                <div class="categories-section">
+                    <h3>ניהול קטגוריות</h3>
+                    <div class="form-group">
+                        <input type="text" id="newCategoryInput" placeholder="שם הקטגוריה החדשה">
+                        <button onclick="addCustomCategory()">הוסף קטגוריה</button>
+                    </div>
+                    <div id="customCategoriesList" class="categories-list"></div>
+                </div>
+
+                <div class="tags-section">
+                    <h3>ניהול תגיות</h3>
+                    <div class="form-group">
+                        <input type="text" id="newTagInput" placeholder="תגית חדשה">
+                        <button onclick="addTag()">הוסף תגית</button>
+                    </div>
+                    <div id="tagsContainer" class="tags-container"></div>
+                </div>
+
+                <div class="payment-methods-section">
+                    <h3>אמצעי תשלום</h3>
+                    <div class="form-group">
+                        <input type="text" id="newPaymentMethodInput" placeholder="שם אמצעי התשלום החדש">
+                        <button onclick="addPaymentMethod()">הוסף אמצעי תשלום</button>
+                    </div>
+                    <div id="paymentMethodsList"></div>
+                </div>
+            </div>
+
+            <div class="expense-form">
+                <h2>הוספת הוצאה חדשה</h2>
+                <div class="form-group">
+                    <label for="amountInput">סכום:</label>
+                    <input type="number" id="amountInput" required>
+                </div>
+                <div class="form-group">
+                    <label for="categoryInput">קטגוריה:</label>
+                    <select id="categoryInput" required>
+                        <option value="">בחר קטגוריה</option>
+                        <optgroup label="קטגוריות קבועות">
+                            <option value="מזון">מזון</option>
+                            <option value="תחבורה">תחבורה</option>
+                            <option value="בידור">בידור</option>
+                            <option value="קניות">קניות</option>
+                            <option value="חשבונות">חשבונות</option>
+                            <option value="אחר">אחר</option>
+                        </optgroup>
+                        <optgroup label="קטגוריות מותאמות אישית" id="customCategoriesGroup">
+                        </optgroup>
+                    </select>
+                </div>
+                      <div class="form-group">
+                   <label for="paymentMethodInput">אמצעי תשלום:</label>
+                   <select id="paymentMethodInput" required>
+                       <option value="">בחר אמצעי תשלום</option>
+                   </select>
+               </div>
+               <div class="form-group">
+                   <label for="descriptionInput">תיאור:</label>
+                   <input type="text" id="descriptionInput">
+               </div>
+               <div class="form-group">
+                   <label>
+                       <input type="checkbox" id="isRecurringInput">
+                       הוצאה קבועה (חודשית)
+                   </label>
+               </div>
+               <button onclick="addExpense()">הוסף הוצאה</button>
+               <div id="expenseError" class="error hidden"></div>
+           </div>
+
+           <div class="dashboard">
+               <div class="chart">
+                   <h2>התפלגות הוצאות לפי קטגוריה</h2>
+                   <select id="monthSelect" onchange="updateCharts()">
+                       <!-- יתמלא דינמית -->
+                   </select>
+                   <canvas id="pieChart"></canvas>
+               </div>
+               <div class="chart">
+                   <h2>הוצאות לאורך זמן</h2>
+                   <canvas id="lineChart"></canvas>
+               </div>
+               <div class="chart">
+                   <h2>התפלגות לפי אמצעי תשלום</h2>
+                   <canvas id="paymentMethodChart"></canvas>
+               </div>
+               <div class="chart">
+                   <h2>השוואה בין חודשים</h2>
+                   <canvas id="monthlyComparisonChart"></canvas>
+               </div>
+           </div>
+
+           <div class="export-section">
+               <h3>ייצוא דוחות</h3>
+               <div class="export-options">
+                   <button onclick="exportToExcel('monthly')">דוח חודשי</button>
+                   <button onclick="exportToExcel('yearly')">דוח שנתי</button>
+                   <button onclick="exportToExcel('category')">דוח לפי קטגוריות</button>
+               </div>
+           </div>
+
+           <div class="expenses-list">
+               <h2>רשימת הוצאות</h2>
+               <div class="filters">
+                   <select id="categoryFilter" onchange="filterExpenses()">
+                       <option value="">כל הקטגוריות</option>
+                   </select>
+                   <select id="paymentMethodFilter" onchange="filterExpenses()">
+                       <option value="">כל אמצעי התשלום</option>
+                   </select>
+                   <select id="monthFilter" onchange="filterExpenses()">
+                       <option value="">כל החודשים</option>
+                   </select>
+               </div>
+               <table id="expenseTable">
+                   <thead>
+                       <tr>
+                           <th>תאריך</th>
+                           <th>קטגוריה</th>
+                           <th>סכום</th>
+                           <th>אמצעי תשלום</th>
+                           <th>תיאור</th>
+                           <th>הוצאה קבועה</th>
+                           <th>תגיות</th>
+                       </tr>
+                   </thead>
+                   <tbody id="expensesList"></tbody>
+               </table>
+           </div>
+       </div>
+   </div>
+</body>
+</html>
