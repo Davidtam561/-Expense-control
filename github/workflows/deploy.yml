@@ -3,10 +3,18 @@ on:
   push:
     branches: [ main ]
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
     steps:
       - uses: actions/checkout@v2
+      
+      - name: Create env file
+        run: |
+          echo "const SUPABASE_URL = '${{ secrets.SUPABASE_URL }}';" > env.js
+          echo "const SUPABASE_KEY = '${{ secrets.SUPABASE_KEY }}';" >> env.js
+
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
